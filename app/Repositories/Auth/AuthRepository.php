@@ -3,6 +3,7 @@ namespace App\Repositories\Auth;
 
 use App\Exceptions\ReportableException;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\UserStoreRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -31,7 +32,6 @@ class AuthRepository implements AuthRepositoryImpl
     }
 
     public function staffLogin(LoginRequest $request){
-
         $user = User::where('email', $request->email)
             ->where("type","S")
             ->first();
@@ -50,7 +50,7 @@ class AuthRepository implements AuthRepositoryImpl
         return $user;
     }
 
-    public function store(Request $request){
+    public function store(UserStoreRequest $request){
         $dup = $this->user->where("email",$request->input('email'))->first();
         if(!empty($dup)){
             throw new ReportableException("Already used email",401);

@@ -39,12 +39,12 @@ class CreateStaff extends Command
      */
     public function handle()
     {
-        $staff = User::create([
-            'email' => $this->argument('email'),
-            'name' => $this->argument('name'),
-            'password' => Hash::make($this->argument('password')),
-            'type' => "S",
-        ]);
+        $staff = new User;
+        $staff->email = $this->argument('email');
+        $staff->name = $this->argument('name');
+        $staff->password = Hash::make($this->argument('password'));
+        $staff->type = "S";
+        $staff->save();
 
         $this->info($staff->toJson());
 

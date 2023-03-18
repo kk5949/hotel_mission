@@ -37,6 +37,10 @@ class AuthController extends Controller
         return $this->authRepository->userLogin($request);
     }
 
+    public function staffLogin(LoginRequest $request){
+        return $this->authRepository->staffLogin($request);
+    }
+
     public function logout():JsonResponse
     {
         $user = auth()->user();
@@ -46,10 +50,6 @@ class AuthController extends Controller
         $result['msg'] = "Logout";
 
         return response()->json($result);
-    }
-
-    public function staffLogin(){
-
     }
 
     /**

@@ -23,4 +23,14 @@ class Hotel extends Model
         return $this->hasMany(Reservation::class);
     }
 
+    public function getReservationCountsAttribute()
+    {
+        return $this->reservations
+            ->groupBy('step')
+            ->map(function ($group) {
+                return $group->count();
+            })
+            ->toArray();
+    }
+
 }

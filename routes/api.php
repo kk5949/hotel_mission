@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Hotel\HotelController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,4 +25,12 @@ Route::post('/staff/login', [AuthController::class, 'staffLogin'])->name('staff.
 
 Route::post('/user', [AuthController::class, 'store'])->name('user.store');
 
+
+
+// Sanctum 미들웨어 적용된 라우터 그룹
+Route::middleware('auth:sanctum')->group(function () {
+    // 로그아웃
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::apiResource("hotel",HotelController::class);
+});
 
