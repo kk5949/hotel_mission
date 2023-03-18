@@ -36,13 +36,18 @@ class ReservationController extends Controller
         return $this->reservationRepository->show($id);
     }
 
-    public function cancel($id){
+    public function cancel($id)
+    {
         return $this->reservationRepository->cancel($id);
     }
-    public function confirm($id){
+
+    public function confirm($id)
+    {
         return $this->reservationRepository->confirm($id);
     }
-    public function reject($id){
+
+    public function reject($id)
+    {
         return $this->reservationRepository->reject($id);
     }
 

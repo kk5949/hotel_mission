@@ -10,7 +10,7 @@ class Hotel extends Model
 {
     use HasFactory;
 
-    protected $appends = ['soldout'];
+    protected $appends = ['soldout','remainRoom'];
 
     protected $fillable = [
         'name', 'address','room'
@@ -26,16 +26,6 @@ class Hotel extends Model
         return $this->hasMany(Reservation::class);
     }
 
-    public function getReservationCountsAttribute()
-    {
-        return $this->reservations
-            ->groupBy('step')
-            ->map(function ($group) {
-                return $group->count();
-            })
-            ->toArray();
-    }
-
     public function getSoldoutAttribute()
     {
         $reserved = Reservation::where('hotel_id', $this->id)
@@ -43,5 +33,13 @@ class Hotel extends Model
             ->count();
 
         return $reserved >= $this->room;
+    }
+
+    public function getRemainRoomAttribute(){
+        $reserved = Reservation::where('hotel_id', $this->id)
+            ->whereIn('step', [ReservationStatus::PROGRESSING, ReservationStatus::CONFIRMED])
+            ->count();
+
+        return $this->room - $reserved;
     }
 }

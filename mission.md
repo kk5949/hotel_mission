@@ -18,3 +18,7 @@
 - API SPEC 문서 작성
 - API 오류 없이 작성
 - 화면미구현
+
+TODO LIST
+- test 
+- api doc (notion)

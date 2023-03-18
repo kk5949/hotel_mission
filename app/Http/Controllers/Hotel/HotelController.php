@@ -26,12 +26,6 @@ class HotelController extends Controller
         return $this->hotelRepository->index($request);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(HotelCreateRequest $request)
     {
         return $this->hotelRepository->store($request);
@@ -39,7 +33,7 @@ class HotelController extends Controller
 
     public function show($id)
     {
-        //
+        return $this->hotelRepository->show($id);
     }
 
     public function update(HotelCreateRequest $request, $id)

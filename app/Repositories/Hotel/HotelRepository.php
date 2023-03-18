@@ -32,21 +32,6 @@ class HotelRepository implements HotelRepositoryImpl
                     ->orWhere('address', 'like', "%$search%");
             });
         }
-        $hotels->withCount([
-            'reservations',
-            'reservations as progressing' => function ($query) {
-                $query->where('status', ReservationStatus::PROGRESSING);
-            },
-            'reservations as cancelled' => function ($query) {
-                $query->where('status', ReservationStatus::CANCELLED);
-            },
-            'reservations as rejected' => function ($query) {
-                $query->where('status', ReservationStatus::REJECTED);
-            },
-            'reservations as confirmed' => function ($query) {
-                $query->where('status', ReservationStatus::CONFIRMED);
-            },
-        ]);
 
         // 페이지네이션
         $hotels = $hotels->paginate($request->input('per_page', 10));
