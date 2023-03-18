@@ -79,6 +79,9 @@ class HotelRepository implements HotelRepositoryImpl
         }
 
         $hotel = Hotel::find($id);
+        if(!empty($hotel)){
+            throw new ReportableException("Not found",404);
+        }
         $hotel->name=$request->input("name");
         $hotel->address=$request->input("address");
         $hotel->star=$request->input("star",1);
