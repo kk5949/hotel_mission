@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Repositories\Hotel;
+namespace App\Repositories\Reservation;
 
 
 interface ReservationRepositoryImpl

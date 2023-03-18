@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Enum\ReservationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Hotel extends Model
 {
     use HasFactory;
+
+    protected $appends = ['soldout'];
 
     protected $fillable = [
         'name', 'address','room'
@@ -33,4 +36,12 @@ class Hotel extends Model
             ->toArray();
     }
 
+    public function getSoldoutAttribute()
+    {
+        $reserved = Reservation::where('hotel_id', $this->id)
+            ->whereIn('step', [ReservationStatus::PROGRESSING, ReservationStatus::CONFIRMED])
+            ->count();
+
+        return $reserved >= $this->room;
+    }
 }

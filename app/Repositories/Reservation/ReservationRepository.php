@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repositories\Hotel;
+namespace App\Repositories\Reservation;
 
 use App\Enum\ReservationStatus;
 use App\Exceptions\ReportableException;
@@ -8,6 +8,7 @@ use App\Http\Requests\Hotel\HotelCreateRequest;
 use App\Http\Requests\Reservation\ReservationCreateRequest;
 use App\Models\Hotel;
 use App\Models\Reservation;
+use App\Repositories\Reservation\ReservationRepositoryImpl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -42,20 +43,35 @@ class ReservationRepository implements ReservationRepositoryImpl
     }
 
     // 예약기능
+
+    /**
+     * @param ReservationCreateRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * 예약은 일단 유저, 스탶 모두 가능함
+     * 예약신청, 예약확정은 재고에서 차감하여 계산한다.
+     * 예약거절, 예약취소는 재고에 반영하지 않는다.
+     */
     public function store(ReservationCreateRequest $request)
     {
-        //예약신청, 예약확정은 재고에서 차감하여 계산한다.
-        //예약거절, 예약취소는 재고에 반영하지 않는다.
         $hotelId = $request->input("hotel_id");
 
-        //TODO:예약 관련 기능 추가해야함
+        $hotel = Hotel::find($hotelId);
+        $soldout = $hotel->soldout;
 
-        $hotel = Reservation::create([
-            "user_id" => Auth::user()->id,
-            "hotel_id" => $hotelId,
-            "step" => ReservationStatus::PROGRESSING,
-        ]);
-        return response()->json($hotel);
+        if(!$soldout){
+            $reservation = new Reservation;
+            $reservation->user_id = Auth::user()->id;
+            $reservation->hotel_id = $hotelId;
+            $reservation->step = ReservationStatus::PROGRESSING;
+            $reservation->save();
+
+            $result = ["code"=>200, "message"=>"Reservation has been registered successfully"];
+        }else{
+            $result = ["code"=>400, "message"=>"Reservation fail. Soldout rooms"];
+        }
+
+        return response()->json($result);
     }
 
     public function show($id)
@@ -63,6 +79,16 @@ class ReservationRepository implements ReservationRepositoryImpl
         return Hotel::find($id);
     }
 
+    /**
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     * @throws ReportableException
+     *
+     * 일반유저는 본인의 예약정보만 취소가 가능합니다.
+     * 스태프는 모든 예약정보를 취소 할 수 있습니다.
+     *
+     * 예약중, 예약완료인 예약만 취소 가능하며 반려되거나 이미 취소한 데이터는 처리되지 않습니다.
+     */
     public function cancel($id){
         // 일반 유저는 본인 예약정보만 취소가능, 스태프는 모두 가능
         if (Auth::user()->type != "S") {
@@ -72,24 +98,79 @@ class ReservationRepository implements ReservationRepositoryImpl
         }
 
         if(empty($reservation)){
-            throw new ReportableException("Not found",404);
+            $result = ["code"=>404, "message"=>"Reservation not found"];
+            return response()->json($result);
         }
 
-        if($reservation->step != ReservationStatus::CANCELLED){
+        if(in_array($reservation->step, [ReservationStatus::PROGRESSING,ReservationStatus::CONFIRMED])){
             $reservation->step = ReservationStatus::CANCELLED;
             $reservation->save();
+            $result = ["code"=>200, "message"=>"Reservation has been cancelled successfully"];
+        }else{
+            $result = ["code"=>400, "message"=>"Reservation is not progressing, please check again"];
         }
-        $result = ["code"=>200, "message"=>"Reservation has been cancelled successfully"];
 
         return response()->json($result);
 
     }
 
-    public function confirm(){
+    /**
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * 최종 확정은 스태프만 가능하다.
+     * 반려, 취소건은 확정이 불가능하고 예약중인(progressing) 데이터만 가능하다.
+     */
+    public function confirm($id){
+        if (Auth::user()->type != "S") {
+            $result = ["code"=>401, "message"=>"Staff only"];
+            return response()->json($result);
+        }
 
+        $reservation = Reservation::find($id);
+        if(empty($reservation)){
+            $result = ["code"=>404, "message"=>"Reservation not found"];
+            return response()->json($result);
+        }
+
+        if($reservation->step == ReservationStatus::PROGRESSING){
+            $reservation->step = ReservationStatus::CONFIRMED;
+            $reservation->save();
+            $result = ["code"=>200, "message"=>"Reservation has been confirmed successfully"];
+        }else{
+            $result = ["code"=>400, "message"=>"Reservation is not progressing, please check again"];
+        }
+        return response()->json($result);
     }
 
-    public function reject(){}
+    /**
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     * 반려는 스태프만 가능합니다.
+     * 반려는 예약중, 예약완료만 가능하며 예약취소이거나 이미 반려된 경우 처리되지 않습니다.
+     */
+    public function reject($id){
+        if (Auth::user()->type != "S") {
+            $result = ["code"=>401, "message"=>"Staff only"];
+            return response()->json($result);
+        }
+
+        $reservation = Reservation::find($id);
+        if(empty($reservation)){
+            $result = ["code"=>404, "message"=>"Reservation not found"];
+            return response()->json($result);
+        }
+
+        if(in_array($reservation->step, [ReservationStatus::PROGRESSING,ReservationStatus::CONFIRMED])){
+            $reservation->step = ReservationStatus::REJECTED;
+            $reservation->save();
+            $result = ["code"=>200, "message"=>"Reservation has been rejected successfully"];
+        }else{
+            $result = ["code"=>400, "message"=>"Reservation is not progressing, please check again"];
+        }
+
+        return response()->json($result);
+    }
 
     public function update(HotelCreateRequest $request, $id)
     {
