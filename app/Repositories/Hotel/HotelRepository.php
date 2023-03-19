@@ -5,6 +5,7 @@ use App\Enum\ReservationStatus;
 use App\Exceptions\ReportableException;
 use App\Http\Requests\Hotel\HotelCreateRequest;
 use App\Models\Hotel;
+use App\Models\Reservation;
 use App\Response\CustomPaginateResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -82,23 +83,28 @@ class HotelRepository implements HotelRepositoryImpl
         if (Auth::user()->type != "S") {
             throw new ReportableException("Staff only", 400);
         }
+        $star = $request->input("star",1);
+        $room = $request->input("room",1);
 
         $hotel = Hotel::with('reservations')->find($id);
         if(empty($hotel)){
-            throw new ReportableException("Not found",404);
+            return ["code"=>"404","message"=>"Hotel not found"];
         }
 
-        //TODO: 수정예정, BM 수정
-        dd($hotel->toArray());
+        $reservations = Reservation::where("hotel_id",$id)->whereIn("step",[ReservationStatus::PROGRESSING,ReservationStatus::CONFIRMED])->count();
+        if($room < $reservations){
+            return ["code"=>"400","message"=>"$reservations Reservation remains."];
+        }
 
         $hotel->name=$request->input("name");
         $hotel->address=$request->input("address");
-        $hotel->star=$request->input("star",1);
-        $hotel->room=$request->input("room",1);
+        $hotel->star=$star;
+        $hotel->room=$room;
 
         $hotel->save();
-        return response()->json($hotel);
+        return ["code"=>200, "message"=>"Hotel has been modified successfully"];
     }
+
     public function destroy($id){
         //미구현
     }
