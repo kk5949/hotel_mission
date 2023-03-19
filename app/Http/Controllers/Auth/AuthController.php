@@ -50,7 +50,7 @@ class AuthController extends Controller
 
     public function store(UserStoreRequest $request)
     {
-        $this->authRepository->store($request);
+        return $this->authRepository->store($request);
     }
 
     public function show($id)
