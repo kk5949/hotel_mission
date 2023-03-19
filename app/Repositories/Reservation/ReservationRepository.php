@@ -11,9 +11,12 @@ use App\Models\Reservation;
 use App\Repositories\Reservation\ReservationRepositoryImpl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Response\CustomPaginateResponse;
 
 class ReservationRepository implements ReservationRepositoryImpl
 {
+    use CustomPaginateResponse;
+
     protected Reservation $reservation;
 
     /**
@@ -28,6 +31,7 @@ class ReservationRepository implements ReservationRepositoryImpl
 
     public function index(Request $request)
     {
+        $hotelId = $request->input("hotel_id");
         $reservations = $this->reservation->query();
 
         // 검색어가 있으면 검색 조건 추가
@@ -36,17 +40,17 @@ class ReservationRepository implements ReservationRepositoryImpl
             $reservations->where("user_id",Auth::user()->id);
         }
 
+        if(!empty($hotelId)){
+            $reservations->where("hotel_id",$hotelId);
+        }
+
         $reservations = $reservations->paginate($request->input('per_page', 10));
 
-        return response()->json($reservations);
-
+        return self::customPaginateResponse($reservations);
     }
-
-    // 예약기능
 
     /**
      * @param ReservationCreateRequest $request
-     * @return \Illuminate\Http\JsonResponse
      *
      * 예약은 일단 유저, 스탶 모두 가능함
      * 예약신청, 예약확정은 재고에서 차감하여 계산한다.
@@ -57,6 +61,9 @@ class ReservationRepository implements ReservationRepositoryImpl
         $hotelId = $request->input("hotel_id");
 
         $hotel = Hotel::find($hotelId);
+        if(empty($hotel)){
+            return ["code"=>404, "message"=>"Reservation fail. Hotel not found"];
+        }
         $soldout = $hotel->soldout;
 
         if(!$soldout){
@@ -76,7 +83,17 @@ class ReservationRepository implements ReservationRepositoryImpl
 
     public function show($id)
     {
-        return Hotel::find($id);
+        if (Auth::user()->type != "S") {
+            $reservation = Reservation::where("user_id",Auth::user()->id)->find($id);
+        }else{
+            $reservation = Reservation::find($id);
+        }
+
+        if(empty($reservation)){
+            return ["code"=>"404","message"=>"Reservation not Found"];
+        }
+
+        return $reservation;
     }
 
     /**
@@ -90,7 +107,6 @@ class ReservationRepository implements ReservationRepositoryImpl
      * 예약중, 예약완료인 예약만 취소 가능하며 반려되거나 이미 취소한 데이터는 처리되지 않습니다.
      */
     public function cancel($id){
-        // 일반 유저는 본인 예약정보만 취소가능, 스태프는 모두 가능
         if (Auth::user()->type != "S") {
             $reservation = Reservation::where("user_id",Auth::user()->id)->find($id);
         }else{
