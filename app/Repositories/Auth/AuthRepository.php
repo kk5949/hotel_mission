@@ -24,7 +24,8 @@ class AuthRepository implements AuthRepositoryImpl
             ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response('Login invalid', 401);
+            $return = ["code"=>401, "message"=>"Login invalid"];
+            return response()->json($return);
         }
 
         // 토큰 발행
@@ -37,7 +38,8 @@ class AuthRepository implements AuthRepositoryImpl
             ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response('Login invalid', 401);
+            $return = ["code"=>401, "message"=>"Login invalid"];
+            return response()->json($return);
         }
 
         // 토큰 발행
@@ -64,6 +66,7 @@ class AuthRepository implements AuthRepositoryImpl
 
         $user->save();
 
-        return $user;
+        $result = ["code"=>200, "message"=>"Congratulations on your new registration"];
+        return response()->json($result);
     }
 }
