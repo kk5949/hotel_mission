@@ -20,6 +20,8 @@ class CreateHotelsTable extends Migration
             $table->tinyInteger("star")->default(1);
             $table->integer("room")->default(1);
             $table->timestamps();
+
+            $table->fullText(["name","address"]);
         });
     }
 

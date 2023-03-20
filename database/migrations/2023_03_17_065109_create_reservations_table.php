@@ -19,6 +19,10 @@ class CreateReservationsTable extends Migration
             $table->integer("hotel_id");
             $table->integer("step")->default("10")->comment("10:진행중 20:예약완료 30:예약반려 40:예약취소");
             $table->timestamps();
+
+            $table->index("user_id");
+            $table->index("hotel_id");
+            $table->index("step");
         });
     }
 
